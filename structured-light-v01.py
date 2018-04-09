@@ -43,7 +43,7 @@ sla = np.zeros((SLW, SLH, 4), dtype=np.uint8)
 sla[:,:,3] = 255
 
 # Setup display and initialise pi3d
-DISPLAY = pi3d.Display.create(x=100, y=100,
+DISPLAY = pi3d.Display.create(#x=100, y=100,
                          background=(0.2, 0.4, 0.6, 1))
 shader = pi3d.Shader("uv_reflect")
 flatsh = pi3d.Shader('uv_flat')
@@ -80,9 +80,10 @@ frame=0
 
 for y in range(0,SLH) :
   for x  in range(0,SLW) : 
+    c=((((x>>4)^(y>>4))&1)*(127))+128
     sla[x,y,0]=x*255/SLW
     sla[x,y,1]=y*255/SLH
-    sla[x,y,2]=0
+    sla[x,y,2]=c
     sla[x,y,3]=0xff
 
 
