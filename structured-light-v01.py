@@ -11,31 +11,19 @@ import threading
 import time
 from math import cos, sin, radians
 
+ 
+CAMW=1920	#2592
+CAMH=1088	#1944
+npa = np.zeros((CAMH, CAMW, 4), dtype=np.uint8)
+npa[:,:,3] = 255
 
-npa = None
-new_pic = False
-
-def get_pics():
-  global npa, new_pic
+def snap_pic():
   with picamera.PiCamera() as camera:
     with picamera.array.PiRGBArray(camera) as output:
-      camera.resolution = (320, 240)
-      while True:
-        output.truncate(0)
-        camera.capture(output, 'rgb')
-        if npa is None:
-          npa = np.zeros(output.array.shape[:2] + (4,), dtype=np.uint8)
-          npa[:,:,3] = 255
-        npa[:,:,0:3] = output.array
-        new_pic = True
-        time.sleep(0.05)
-
-t = threading.Thread(target=get_pics)
-t.daemon = True
-#t.start()
-
-#while not new_pic:
-#    time.sleep(0.1)
+      camera.resolution = (CAMW, CAMH)
+      output.truncate(0)
+      camera.capture(output, 'rgb')
+      npa[:,:,0:3] = output.array
 
 SLW=512
 SLH=256
@@ -55,7 +43,8 @@ opengles.glDisable(GL_CULL_FACE)
 #========================================
 # load bump and reflection textures
 bumptex = pi3d.Texture("/home/pi/Develop/pi3d/pi3d_demos/textures/floor_nm.jpg")
-shinetex = pi3d.Texture(sla)
+shinetex = pi3d.Texture(npa)
+
 # load model_loadmodel
 mymodel = pi3d.Model(file_string='/home/pi/Develop/pi3d/pi3d_demos/models/teapot.obj', name='teapot')
 mymodel.set_shader(shader)
@@ -76,7 +65,6 @@ CAMERA = pi3d.Camera.instance()
 dist = 4.0
 rot = 0.0
 tilt = 0.0
-frame=0
 
 for y in range(0,SLH) :
   for x  in range(0,SLW) : 
@@ -85,7 +73,7 @@ for y in range(0,SLH) :
     sla[x,y,1]=y*255/SLH
     sla[x,y,2]=c
     sla[x,y,3]=0xff
-
+shinetex.update_ndarray(npa)   
 
 while DISPLAY.loop_running():
   k = mykeys.read()
@@ -94,17 +82,13 @@ while DISPLAY.loop_running():
       dist += 0.02
     if k==ord('s'):
       dist -= 0.02
+    if k==ord(' '):
+      snap_pic()
+      shinetex.update_ndarray(npa)      
     elif k==27:
       mykeys.close()
       DISPLAY.destroy()
       break
-
-  frame+=1
-  
-  shinetex.update_ndarray(sla)
-  
-  if new_pic:
-    new_pic = False
 
   mx, my = mymouse.position()
   rot -= (mx - omx)*0.4
