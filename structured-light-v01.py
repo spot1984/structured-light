@@ -32,11 +32,15 @@ def get_pics():
 
 t = threading.Thread(target=get_pics)
 t.daemon = True
-t.start()
+#t.start()
 
-while not new_pic:
-    time.sleep(0.1)
+#while not new_pic:
+#    time.sleep(0.1)
 
+SLW=512
+SLH=256
+sla = np.zeros((SLW, SLH, 4), dtype=np.uint8)
+sla[:,:,3] = 255
 
 # Setup display and initialise pi3d
 DISPLAY = pi3d.Display.create(x=100, y=100,
@@ -51,7 +55,7 @@ opengles.glDisable(GL_CULL_FACE)
 #========================================
 # load bump and reflection textures
 bumptex = pi3d.Texture("/home/pi/Develop/pi3d/pi3d_demos/textures/floor_nm.jpg")
-shinetex = pi3d.Texture(npa)
+shinetex = pi3d.Texture(sla)
 # load model_loadmodel
 mymodel = pi3d.Model(file_string='/home/pi/Develop/pi3d/pi3d_demos/models/teapot.obj', name='teapot')
 mymodel.set_shader(shader)
@@ -72,6 +76,15 @@ CAMERA = pi3d.Camera.instance()
 dist = 4.0
 rot = 0.0
 tilt = 0.0
+frame=0
+
+for y in range(0,SLH) :
+  for x  in range(0,SLW) : 
+    sla[x,y,0]=x*255/SLW
+    sla[x,y,1]=y*255/SLH
+    sla[x,y,2]=0
+    sla[x,y,3]=0xff
+
 
 while DISPLAY.loop_running():
   k = mykeys.read()
@@ -85,8 +98,11 @@ while DISPLAY.loop_running():
       DISPLAY.destroy()
       break
 
+  frame+=1
+  
+  shinetex.update_ndarray(sla)
+  
   if new_pic:
-    shinetex.update_ndarray(npa)
     new_pic = False
 
   mx, my = mymouse.position()
